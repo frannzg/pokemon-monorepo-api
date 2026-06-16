@@ -3,8 +3,36 @@ import { fetchExternalData } from '../services/externalApi.service.js';
 
 export const getStoredData = async (req, res) => {
   try {
-    const data = await ExternalData.find().sort({ createdAt: -1 });
-    res.json(data);
+    const { search, type, page = 1, limit = 60, sort } = req.query;
+    const filter = {};
+
+    if (search) {
+      filter.title = { $regex: search, $options: 'i' };
+    }
+    if (type) {
+      filter.description = { $regex: type, $options: 'i' };
+    }
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit) || 60));
+    const skip = (pageNum - 1) * limitNum;
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'name') sortOption = { title: 1 };
+    if (sort === 'id') sortOption = { externalId: 1 };
+
+    const [data, total] = await Promise.all([
+      ExternalData.find(filter).sort(sortOption).skip(skip).limit(limitNum),
+      ExternalData.countDocuments(filter),
+    ]);
+
+    res.json({
+      data,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

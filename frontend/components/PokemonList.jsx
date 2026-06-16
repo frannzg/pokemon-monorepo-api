@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   getExternalData,
   syncExternalData,
@@ -19,49 +20,103 @@ const TYPE_COLORS = {
   dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD',
 };
 
+const ALL_POKEMON_TYPES = Object.keys(TYPE_COLORS);
+
+const PokemonCard = memo(function PokemonCard({ pokemon }) {
+  const sprite =
+    pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default ||
+    pokemon.rawData?.sprites?.front_default;
+  const types = pokemon.description.split(', ');
+
+  return (
+    <Link href={`/pokemon/${pokemon.externalId}`} className="card-link">
+      <div className="card">
+        <div className="card-id">#{pokemon.externalId.padStart(4, '0')}</div>
+        <div className="card-image">
+          {sprite ? (
+            <Image
+              src={sprite}
+              alt={pokemon.title}
+              width={110}
+              height={110}
+              className="card-img"
+              loading="lazy"
+            />
+          ) : (
+            <div className="no-sprite">?</div>
+          )}
+        </div>
+        <div className="card-body">
+          <h3 className="card-name">{pokemon.title}</h3>
+          <div className="card-types">
+            {types.map((type) => (
+              <span
+                key={type}
+                className="type-badge"
+                style={{ backgroundColor: TYPE_COLORS[type] || '#999' }}
+              >
+                {type}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+});
+
+function SkeletonCard() {
+  return (
+    <div className="card skeleton">
+      <div className="card-image skeleton-pulse" />
+      <div className="card-body">
+        <div className="skeleton-line skeleton-pulse" style={{ width: '70%', height: 14 }} />
+        <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+          <div className="skeleton-line skeleton-pulse" style={{ width: 50, height: 20 }} />
+          <div className="skeleton-line skeleton-pulse" style={{ width: 40, height: 20 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PokemonList() {
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [sortBy, setSortBy] = useState('id');
   const [page, setPage] = useState(1);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const allTypes = [...new Set(data.flatMap((p) => p.description.split(', ')))];
-
-  const sorted = [...data].sort((a, b) => {
-    if (sortBy === 'name') return a.title.localeCompare(b.title);
-    return Number(a.externalId) - Number(b.externalId);
-  });
-
-  const filtered = sorted.filter((p) => {
-    const matchesName = p.title.toLowerCase().includes(search.toLowerCase());
-    const matchesType = !typeFilter || p.description.includes(typeFilter);
-    return matchesName && matchesType;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
-  useEffect(() => { setPage(1); }, [search, typeFilter, sortBy]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getExternalData();
-      setData(result);
+      const result = await getExternalData({
+        search: search || undefined,
+        type: typeFilter || undefined,
+        page,
+        limit: ITEMS_PER_PAGE,
+        sort: sortBy,
+      });
+      setData(result.data);
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, typeFilter, page, sortBy]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -82,11 +137,23 @@ export default function PokemonList() {
     try {
       await deleteExternalData();
       setData([]);
+      setTotal(0);
+      setTotalPages(0);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    setPage(1);
   };
 
   const pageNumbers = [];
@@ -104,10 +171,19 @@ export default function PokemonList() {
             <p className="header-subtitle">Gotta fetch &apos;em all!</p>
           </div>
         </div>
-        <div className="header-actions">
+        <button
+          className={`menu-toggle ${menuOpen ? 'open' : ''}`}
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span /><span /><span />
+        </button>
+        <div className={`header-actions ${menuOpen ? 'open' : ''}`}>
           <button onClick={handleSync} disabled={syncing} className="btn btn-sync">
             {syncing ? (
-              <><span className="btn-spinner" /> Syncing...</>
+              <>
+                <span className="btn-spinner" /> Syncing...
+              </>
             ) : (
               'Sync from PokeAPI'
             )}
@@ -133,26 +209,43 @@ export default function PokemonList() {
               type="text"
               placeholder="Search pokemon..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="search-input"
             />
           </div>
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="filter-select">
-            <option value="">All types</option>
-            {allTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
+          <div className="filter-header">
+            <span className="filter-label">Tipo</span>
+            {typeFilter && (
+              <button className="filter-reset-btn" onClick={() => { setTypeFilter(''); setPage(1); }}>
+                ✕ Limpiar
+              </button>
+            )}
+          </div>
+          <div className="type-filter-bar">
+            {ALL_POKEMON_TYPES.map((type) => (
+              <button
+                key={type}
+                className={`type-filter-badge ${typeFilter === type ? 'active' : ''}`}
+                style={{ backgroundColor: TYPE_COLORS[type] }}
+                onClick={() => {
+                  setTypeFilter(typeFilter === type ? '' : type);
+                  setPage(1);
+                }}
+              >
+                {type}
+              </button>
             ))}
-          </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="filter-select">
+          </div>
+          <select value={sortBy} onChange={handleSortChange} className="filter-select">
             <option value="id">Sort by #</option>
             <option value="name">Sort by name</option>
           </select>
         </div>
-        {!loading && data.length > 0 && (
+        {!loading && total > 0 && (
           <p className="filter-count">
-            {filtered.length} of {data.length} pokemon
-            {filtered.length !== data.length && (
-              <button className="clear-filter" onClick={() => { setSearch(''); setTypeFilter(''); }}>
+            {data.length} of {total} pokemon
+            {(search || typeFilter) && (
+              <button className="clear-filter" onClick={() => { setSearch(''); setTypeFilter(''); setPage(1); }}>
                 Clear filters
               </button>
             )}
@@ -160,67 +253,48 @@ export default function PokemonList() {
         )}
       </div>
 
-      {error && <div className="error-banner"><span className="error-icon">!</span> {error}</div>}
+      {error && (
+        <div className="error-banner">
+          <span className="error-icon">!</span> {error}
+        </div>
+      )}
 
-      {(loading || syncing) && (
+      {syncing && (
         <div className="loading-state">
           <div className="pokeball-loader" />
-          <p>{syncing ? 'Catching pokemon from PokeAPI...' : 'Loading...'}</p>
+          <p>Catching pokemon from PokeAPI...</p>
         </div>
       )}
 
-      {!loading && !syncing && filtered.length === 0 && (
+      {loading && !syncing && (
+        <div className="grid">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      )}
+
+      {!loading && !syncing && data.length === 0 && !error && (
         <div className="empty-state">
           <div className="empty-icon">?</div>
-          <p>{data.length === 0 ? 'No pokemon yet. Hit Sync!' : 'No matches. Try different filters.'}</p>
+          <p>{total === 0 ? 'No pokemon yet. Hit Sync!' : 'No matches. Try different filters.'}</p>
         </div>
       )}
 
-      {!loading && !syncing && paginated.length > 0 && (
+      {!loading && !syncing && data.length > 0 && (
         <>
-          <div className="grid">
-            {paginated.map((pokemon) => {
-              const sprite = pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default
-                || pokemon.rawData?.sprites?.front_default;
-              const types = pokemon.description.split(', ');
-
-              return (
-                <Link
-                  key={pokemon.externalId}
-                  href={`/pokemon/${pokemon.externalId}`}
-                  className="card-link"
-                >
-                  <div className="card">
-                    <div className="card-id">#{pokemon.externalId.padStart(4, '0')}</div>
-                    <div className="card-image">
-                      {sprite ? (
-                        <img src={sprite} alt={pokemon.title} loading="lazy" />
-                      ) : (
-                        <div className="no-sprite">?</div>
-                      )}
-                    </div>
-                    <div className="card-body">
-                      <h3 className="card-name">{pokemon.title}</h3>
-                      <div className="card-types">
-                        {types.map((type) => (
-                          <span key={type} className="type-badge" style={{ backgroundColor: TYPE_COLORS[type] || '#999' }}>
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="grid staggered-fade">
+            {data.map((pokemon) => (
+              <PokemonCard key={pokemon.externalId} pokemon={pokemon} />
+            ))}
           </div>
 
           {totalPages > 1 && (
             <div className="pagination">
               <button
                 className="page-btn"
-                disabled={safePage <= 1}
-                onClick={() => setPage(safePage - 1)}
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
               >
                 &laquo; Prev
               </button>
@@ -228,7 +302,7 @@ export default function PokemonList() {
                 {pageNumbers.map((num) => (
                   <button
                     key={num}
-                    className={`page-num ${num === safePage ? 'active' : ''}`}
+                    className={`page-num ${num === page ? 'active' : ''}`}
                     onClick={() => setPage(num)}
                   >
                     {num}
@@ -237,8 +311,8 @@ export default function PokemonList() {
               </div>
               <button
                 className="page-btn"
-                disabled={safePage >= totalPages}
-                onClick={() => setPage(safePage + 1)}
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
               >
                 Next &raquo;
               </button>
