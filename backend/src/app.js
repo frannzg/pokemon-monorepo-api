@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import externalDataRoutes from './routes/externalData.routes.js';
+import teamRoutes from './routes/team.routes.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/external-data', externalDataRoutes);
+app.use('/api/teams', teamRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

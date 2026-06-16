@@ -4,34 +4,29 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getPokemonById } from '../../../services/backendApi';
-
-const TYPE_COLORS = {
-  normal: '#A8A77A', fire: '#EE8130', water: '#6390F0',
-  electric: '#F7D02C', grass: '#7AC74C', ice: '#96D9D6',
-  fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65',
-  flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
-  rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC',
-  dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD',
-};
-
-const STATS_META = {
-  hp: { label: 'HP', color: '#FF0000' },
-  attack: { label: 'Attack', color: '#F08030' },
-  defense: { label: 'Defense', color: '#F8D030' },
-  'special-attack': { label: 'Sp. Atk', color: '#6890F0' },
-  'special-defense': { label: 'Sp. Def', color: '#78C850' },
-  speed: { label: 'Speed', color: '#F85888' },
-};
+import { useRouter } from 'next/navigation';
+import { getPokemonById, deletePokemon } from '../../../services/backendApi';
+import TeamModal from '../../../components/TeamModal';
+import PokemonFormModal from '../../../components/PokemonFormModal';
+import RadarChart from '../../../components/RadarChart';
+import { TYPE_COLORS, STATS_META } from '../../../lib/constants';
 
 export default function PokemonDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const audioRef = useRef(null);
   const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shiny, setShiny] = useState(false);
   const [statsAnimated, setStatsAnimated] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pokemon-favs') || '[]'); }
+    catch { return []; }
+  });
+
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -62,6 +57,37 @@ export default function PokemonDetail() {
     audioRef.current.play().catch(() => {});
   };
 
+  const handleDelete = async () => {
+    if (!pokemon) return;
+    if (!confirm(`Delete ${pokemon.title}?`)) return;
+    try {
+      await deletePokemon(pokemon.externalId);
+      router.push('/');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleFormSaved = async () => {
+    setFormModalOpen(false);
+    const result = await getPokemonById(id);
+    setPokemon(result);
+  };
+
+  const toggleFavorite = () => {
+    if (!pokemon) return;
+    setFavorites((prev) => {
+      const next = prev.includes(pokemon.externalId)
+        ? prev.filter((f) => f !== pokemon.externalId)
+        : [...prev, pokemon.externalId];
+      localStorage.setItem('pokemon-favs', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const isFav = favorites.includes(pokemon?.externalId);
+  const raw = pokemon?.rawData;
+
   if (loading) {
     return (
       <div className="container">
@@ -84,7 +110,6 @@ export default function PokemonDetail() {
     );
   }
 
-  const raw = pokemon.rawData;
   const normalSprite =
     raw?.sprites?.other?.['official-artwork']?.front_default ||
     raw?.sprites?.front_default;
@@ -106,6 +131,13 @@ export default function PokemonDetail() {
           <div className="detail-id" style={{ color: accent }}>
             #{pokemon.externalId.padStart(4, '0')}
           </div>
+          <button
+            className={`btn-fav btn-fav-lg ${isFav ? 'fav-active' : ''}`}
+            onClick={toggleFavorite}
+            title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {isFav ? '★' : '☆'}
+          </button>
           <div className="detail-image-wrap" style={{ background: `${accent}22` }}>
             {sprite && (
               <Image
@@ -149,6 +181,24 @@ export default function PokemonDetail() {
                   <audio ref={audioRef} src={cryUrl} preload="none" />
                 </>
               )}
+              <button
+                className="btn btn-small btn-add-team-detail"
+                onClick={() => setTeamModalOpen(true)}
+              >
+                + Team
+              </button>
+              <button
+                className="btn btn-small btn-cry"
+                onClick={() => setFormModalOpen(true)}
+              >
+                ✏️ Edit
+              </button>
+              <button
+                className="btn btn-small btn-delete-detail"
+                onClick={handleDelete}
+              >
+                🗑️ Delete
+              </button>
             </div>
           </div>
         </div>
@@ -170,40 +220,59 @@ export default function PokemonDetail() {
             <div className="info-item">
               <span className="info-label">Abilities</span>
               <span className="info-value">
-                {raw?.abilities
-                  ?.map((a) => a.ability.name.replace('-', ' '))
-                  .join(', ') || 'N/A'}
+                {raw?.abilities?.map((a) => a.ability.name.replace('-', ' ')).join(', ') || 'N/A'}
               </span>
             </div>
           </div>
 
-          <h2 className="section-title">Base Stats</h2>
-          <div className="stats-list">
-            {raw?.stats?.map((stat) => {
-              const meta = STATS_META[stat.stat.name] || {
-                label: stat.stat.name,
-                color: '#999',
-              };
-              const percent = Math.min(100, (stat.base_stat / 255) * 100);
-              return (
-                <div key={stat.stat.name} className="stat-row">
-                  <span className="stat-label">{meta.label}</span>
-                  <span className="stat-value">{stat.base_stat}</span>
-                  <div className="stat-bar-bg">
-                    <div
-                      className="stat-bar-fill"
-                      style={{
-                        width: statsAnimated ? `${percent}%` : '0%',
-                        backgroundColor: meta.color,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="detail-stats-section">
+            <div className="detail-stats-bars">
+              <h2 className="section-title">Base Stats</h2>
+              <div className="stats-list">
+                {raw?.stats?.map((stat) => {
+                  const meta = STATS_META[stat.stat.name] || { label: stat.stat.name, color: '#999' };
+                  const percent = Math.min(100, (stat.base_stat / 255) * 100);
+                  return (
+                    <div key={stat.stat.name} className="stat-row">
+                      <span className="stat-label">{meta.label}</span>
+                      <span className="stat-value">{stat.base_stat}</span>
+                      <div className="stat-bar-bg">
+                        <div
+                          className="stat-bar-fill"
+                          style={{
+                            width: statsAnimated ? `${percent}%` : '0%',
+                            backgroundColor: meta.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="detail-stats-radar">
+              <h2 className="section-title">Radar</h2>
+              <RadarChart stats={raw?.stats} />
+            </div>
           </div>
         </div>
       </div>
+
+      {teamModalOpen && (
+        <TeamModal
+          initialPokemon={pokemon}
+          onClose={() => setTeamModalOpen(false)}
+          onSaved={() => setTeamModalOpen(false)}
+        />
+      )}
+
+      {formModalOpen && (
+        <PokemonFormModal
+          pokemon={pokemon}
+          onClose={() => setFormModalOpen(false)}
+          onSaved={handleFormSaved}
+        />
+      )}
     </div>
   );
 }

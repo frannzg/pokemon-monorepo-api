@@ -35,3 +35,71 @@ export const deleteExternalData = async () => {
   if (!res.ok) throw new Error('Failed to delete data');
   return res.json();
 };
+
+export const createPokemon = async (data) => {
+  const res = await fetch(`${BASE_URL}/api/external-data`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create pokemon');
+  return res.json();
+};
+
+export const updatePokemon = async (externalId, data) => {
+  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update pokemon');
+  return res.json();
+};
+
+export const deletePokemon = async (externalId) => {
+  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete pokemon');
+  return res.json();
+};
+
+export const getTeams = async () => {
+  const res = await fetch(`${BASE_URL}/api/teams`);
+  if (!res.ok) throw new Error('Failed to fetch teams');
+  return res.json();
+};
+
+export const createTeam = async (data) => {
+  const res = await fetch(`${BASE_URL}/api/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create team');
+  return res.json();
+};
+
+export const getTeamById = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/teams/${id}`);
+  if (!res.ok) throw new Error('Team not found');
+  return res.json();
+};
+
+export const updateTeam = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/api/teams/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update team');
+  return res.json();
+};
+
+export const deleteTeam = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/teams/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete team');
+  return res.json();
+};
