@@ -2,7 +2,7 @@
 
 import { useState, useEffect, memo, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   getExternalData,
   syncExternalData,
@@ -11,6 +11,9 @@ import {
 } from '../services/backendApi';
 import TeamModal from './TeamModal';
 import PokemonFormModal from './PokemonFormModal';
+import PokemonSprite from './PokemonSprite';
+import { useToast } from './Toast';
+import { useConfirm } from './ConfirmModal';
 import { TYPE_COLORS, ALL_TYPES } from '../lib/constants';
 
 const ITEMS_PER_PAGE = 60;
@@ -64,18 +67,7 @@ const PokemonCard = memo(function PokemonCard({ pokemon, onAddToTeam, onEdit, on
             {isFavorite ? '★' : '☆'}
           </button>
           <div className="card-image">
-            {sprite ? (
-              <Image
-                src={sprite}
-                alt={pokemon.title}
-                width={110}
-                height={110}
-                className="card-img"
-                loading="lazy"
-              />
-            ) : (
-              <div className="no-sprite">?</div>
-            )}
+            <PokemonSprite src={sprite} alt={pokemon.title} width={110} height={110} className="card-img" />
           </div>
           <div className="card-body">
             <h3 className="card-name">{pokemon.title}</h3>
@@ -136,23 +128,32 @@ function SkeletonCard() {
 }
 
 export default function PokemonList() {
+  const showToast = useToast();
+  const [confirmModal, confirm] = useConfirm();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [typeFilter, setTypeFilter] = useState([]);
-  const [sortBy, setSortBy] = useState('id');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') ? searchParams.get('type').split(',') : []);
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'id');
+  const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pokemon-favs') || '[]'); }
     catch { return []; }
   });
-  const [favoriteFilter, setFavoriteFilter] = useState(false);
+  const [favoriteFilter, setFavoriteFilter] = useState(searchParams.get('fav') === '1');
+  const [lastSync, setLastSync] = useState(() => {
+    try { return localStorage.getItem('pokemon-last-sync') || null; }
+    catch { return null; }
+  });
 
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [teamModalPokemon, setTeamModalPokemon] = useState(null);
@@ -174,15 +175,12 @@ export default function PokemonList() {
       const result = await getExternalData({
         search: search || undefined,
         type: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
+        ids: favoriteFilter && favorites.length > 0 ? favorites.join(',') : undefined,
         page,
         limit: ITEMS_PER_PAGE,
         sort: sortBy,
       });
-      let filtered = result.data;
-      if (favoriteFilter) {
-        filtered = filtered.filter((p) => favorites.includes(p.externalId));
-      }
-      setData(filtered);
+      setData(result.data);
       setTotal(result.total);
       setTotalPages(result.totalPages);
     } catch (err) {
@@ -194,21 +192,42 @@ export default function PokemonList() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    if (typeFilter.length > 0) params.set('type', typeFilter.join(','));
+    if (sortBy !== 'id') params.set('sort', sortBy);
+    if (page > 1) params.set('page', String(page));
+    if (favoriteFilter) params.set('fav', '1');
+    const qs = params.toString();
+    router.replace(qs ? `/?${qs}` : '/', { scroll: false });
+  }, [search, typeFilter, sortBy, page, favoriteFilter, router]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [page]);
+
   const handleSync = async () => {
     setSyncing(true);
     setError(null);
     try {
-      await syncExternalData();
+      const result = await syncExternalData();
+      const now = new Date().toISOString();
+      localStorage.setItem('pokemon-last-sync', now);
+      setLastSync(now);
+      showToast(`Synced ${result.count} Pokémon!`, 'success');
       await fetchData();
     } catch (err) {
       setError(err.message);
+      showToast('Sync failed', 'error');
     } finally {
       setSyncing(false);
     }
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm('Delete ALL pokemon data?')) return;
+    const ok = await confirm('Delete ALL pokemon data? This cannot be undone.');
+    if (!ok) return;
     setLoading(true);
     setError(null);
     try {
@@ -216,6 +235,7 @@ export default function PokemonList() {
       setData([]);
       setTotal(0);
       setTotalPages(0);
+      showToast('All Pokémon deleted', 'success');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -224,9 +244,11 @@ export default function PokemonList() {
   };
 
   const handleDeletePokemon = async (pokemon) => {
-    if (!confirm(`Delete ${pokemon.title}?`)) return;
+    const ok = await confirm(`Delete ${pokemon.title}?`);
+    if (!ok) return;
     try {
       await deletePokemon(pokemon.externalId);
+      showToast(`${pokemon.title} deleted`, 'success');
       await fetchData();
     } catch (err) {
       setError(err.message);
@@ -246,6 +268,7 @@ export default function PokemonList() {
   const handleFormSaved = async () => {
     setFormModalOpen(false);
     setEditingPokemon(null);
+    showToast('Pokémon saved!', 'success');
     await fetchData();
   };
 
@@ -261,14 +284,23 @@ export default function PokemonList() {
   };
   const handleSortChange = (e) => { setSortBy(e.target.value); setPage(1); };
 
+  const formatLastSync = (iso) => {
+    if (!iso) return null;
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`;
+    return `${Math.floor(diff / 86400)} d ago`;
+  };
+
   return (
     <div className="container">
+      {confirmModal}
       <header className="header">
         <div className="header-brand">
           <div className="pokeball-icon" />
           <div>
             <h1>Pokédex</h1>
-            <p className="header-subtitle">Gotta fetch &apos;em all!</p>
           </div>
         </div>
         <button
@@ -339,6 +371,9 @@ export default function PokemonList() {
             {(search || typeFilter.length > 0 || favoriteFilter) && (
               <button className="clear-filter" onClick={() => { setSearchInput(''); setSearch(''); setTypeFilter([]); setPage(1); setFavoriteFilter(false); }}>Clear filters</button>
             )}
+            {lastSync && (
+              <span className="last-sync">Last synced {formatLastSync(lastSync)}</span>
+            )}
           </p>
         )}
       </div>
@@ -371,6 +406,7 @@ export default function PokemonList() {
 
       {!loading && !syncing && data.length > 0 && (
         <>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
           <div className="grid staggered-fade">
             {data.map((pokemon) => (
               <PokemonCard
@@ -384,7 +420,6 @@ export default function PokemonList() {
               />
             ))}
           </div>
-
           <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </>
       )}

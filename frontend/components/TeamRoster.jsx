@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Image from 'next/image';
+import PokemonSprite from './PokemonSprite';
 import { TYPE_COLORS } from '../lib/constants';
 
 export default function TeamRoster({ roster, onRemove, onReorder }) {
@@ -55,17 +55,7 @@ export default function TeamRoster({ roster, onRemove, onReorder }) {
         {pokemon ? (
           <>
             <span className="team-slot-drag-handle">⠿</span>
-            {sprite ? (
-              <Image
-                src={sprite}
-                alt={pokemon.title}
-                width={64}
-                height={64}
-                className="team-slot-img"
-              />
-            ) : (
-              <div className="team-slot-placeholder">?</div>
-            )}
+            <PokemonSprite src={sprite} alt={pokemon.title} width={64} height={64} className="team-slot-img" />
             <span className="team-slot-name">{pokemon.title}</span>
             <button
               className="btn-remove-slot"

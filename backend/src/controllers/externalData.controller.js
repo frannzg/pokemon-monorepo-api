@@ -1,9 +1,9 @@
 import ExternalData from '../models/ExternalData.js';
-import { fetchExternalData } from '../services/externalApi.service.js';
+import { fetchExternalData, fetchPokemonSpecies, fetchEvolutionChain } from '../services/externalApi.service.js';
 
 export const getStoredData = async (req, res) => {
   try {
-    const { search, type, page = 1, limit = 60, sort } = req.query;
+    const { search, type, ids, page = 1, limit = 60, sort } = req.query;
     const filter = {};
 
     if (search) {
@@ -15,6 +15,12 @@ export const getStoredData = async (req, res) => {
         filter.description = { $regex: types[0], $options: 'i' };
       } else if (types.length > 1) {
         filter.$and = types.map(t => ({ description: { $regex: t, $options: 'i' } }));
+      }
+    }
+    if (ids) {
+      const idList = ids.split(',').map(id => id.trim()).filter(Boolean);
+      if (idList.length > 0) {
+        filter.externalId = { $in: idList };
       }
     }
 
@@ -65,9 +71,31 @@ export const syncExternalData = async (req, res) => {
 
 export const getStoredDataById = async (req, res) => {
   try {
-    const data = await ExternalData.findOne({ externalId: req.params.externalId });
+    const { externalId } = req.params;
+    let data = await ExternalData.findOne({ externalId });
+    if (!data) {
+      data = await ExternalData.findOne({ title: { $regex: new RegExp(`^${externalId}$`, 'i') } });
+    }
     if (!data) return res.status(404).json({ message: 'Pokemon not found' });
-    res.json(data);
+
+    let prev = null, next = null;
+    const numId = parseInt(data.externalId);
+    if (!isNaN(numId)) {
+      [prev, next] = await Promise.all([
+        ExternalData.findOne({ externalId: { $lt: numId } })
+          .sort({ externalId: -1 })
+          .select('externalId title'),
+        ExternalData.findOne({ externalId: { $gt: numId } })
+          .sort({ externalId: 1 })
+          .select('externalId title'),
+      ]);
+    }
+
+    res.json({
+      ...data.toObject(),
+      prevPokemon: prev ? { externalId: prev.externalId, title: prev.title } : null,
+      nextPokemon: next ? { externalId: next.externalId, title: next.title } : null,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -180,6 +208,40 @@ export const updatePokemon = async (req, res) => {
 
     await existing.save();
     res.json(existing);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPokemonSpecies = async (req, res) => {
+  try {
+    const data = await ExternalData.findOne({ externalId: req.params.externalId });
+    if (!data) return res.status(404).json({ message: 'Pokemon not found' });
+
+    const speciesUrl = data.rawData?.species?.url;
+    if (!speciesUrl) return res.status(404).json({ message: 'Species data not available' });
+
+    const speciesData = await fetchPokemonSpecies(speciesUrl);
+    res.json(speciesData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPokemonEvolution = async (req, res) => {
+  try {
+    const data = await ExternalData.findOne({ externalId: req.params.externalId });
+    if (!data) return res.status(404).json({ message: 'Pokemon not found' });
+
+    const speciesUrl = data.rawData?.species?.url;
+    if (!speciesUrl) return res.status(404).json({ message: 'Species data not available' });
+
+    const speciesData = await fetchPokemonSpecies(speciesUrl);
+    const evolutionUrl = speciesData.evolution_chain?.url;
+    if (!evolutionUrl) return res.status(404).json({ message: 'Evolution chain not available' });
+
+    const evolutionData = await fetchEvolutionChain(evolutionUrl);
+    res.json(evolutionData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

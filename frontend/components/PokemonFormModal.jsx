@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPokemon, updatePokemon } from '../services/backendApi';
 import { TYPE_COLORS, ALL_TYPES } from '../lib/constants';
 
@@ -54,6 +54,12 @@ export default function PokemonFormModal({ pokemon, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   const toggleType = (t) => {
     setTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
   };
@@ -92,7 +98,7 @@ export default function PokemonFormModal({ pokemon, onClose, onSaved }) {
           <h2 className="modal-title">{isEdit ? 'Edit Pokemon' : 'Create Pokemon'}</h2>
           <div className="modal-actions">
             <button className="btn btn-sync btn-small" onClick={handleSubmit} disabled={saving}>
-              {saving ? '...' : isEdit ? 'Update' : 'Create'}
+              {saving ? <><span className="btn-spinner" /> {isEdit ? 'Updating' : 'Creating'}</> : isEdit ? 'Update' : 'Create'}
             </button>
             <button className="btn btn-header btn-small" onClick={onClose}>Cancel</button>
           </div>

@@ -4,6 +4,7 @@ export const getExternalData = async (params = {}) => {
   const query = new URLSearchParams();
   if (params.search) query.set('search', params.search);
   if (params.type) query.set('type', params.type);
+  if (params.ids) query.set('ids', params.ids);
   if (params.page) query.set('page', params.page);
   if (params.limit) query.set('limit', params.limit);
   if (params.sort) query.set('sort', params.sort);
@@ -101,5 +102,17 @@ export const deleteTeam = async (id) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete team');
+  return res.json();
+};
+
+export const getPokemonSpecies = async (externalId) => {
+  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}/species`);
+  if (!res.ok) throw new Error('Species not found');
+  return res.json();
+};
+
+export const getPokemonEvolution = async (externalId) => {
+  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}/evolution`);
+  if (!res.ok) throw new Error('Evolution chain not found');
   return res.json();
 };

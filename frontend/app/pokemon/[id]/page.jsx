@@ -3,17 +3,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getPokemonById, deletePokemon } from '../../../services/backendApi';
 import TeamModal from '../../../components/TeamModal';
 import PokemonFormModal from '../../../components/PokemonFormModal';
+import PokemonSprite from '../../../components/PokemonSprite';
 import RadarChart from '../../../components/RadarChart';
+import EvolutionChain from '../../../components/EvolutionChain';
+import SpeciesInfo from '../../../components/SpeciesInfo';
+import MoveList from '../../../components/MoveList';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmModal';
 import { TYPE_COLORS, STATS_META } from '../../../lib/constants';
 
 export default function PokemonDetail() {
   const { id } = useParams();
   const router = useRouter();
+  const showToast = useToast();
+  const [confirmModal, confirm] = useConfirm();
   const audioRef = useRef(null);
   const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,9 +66,11 @@ export default function PokemonDetail() {
 
   const handleDelete = async () => {
     if (!pokemon) return;
-    if (!confirm(`Delete ${pokemon.title}?`)) return;
+    const ok = await confirm(`Delete ${pokemon.title}?`);
+    if (!ok) return;
     try {
       await deletePokemon(pokemon.externalId);
+      showToast(`${pokemon.title} deleted`, 'success');
       router.push('/');
     } catch (err) {
       setError(err.message);
@@ -72,6 +81,7 @@ export default function PokemonDetail() {
     setFormModalOpen(false);
     const result = await getPokemonById(id);
     setPokemon(result);
+    showToast('Pokémon updated!', 'success');
   };
 
   const toggleFavorite = () => {
@@ -113,10 +123,10 @@ export default function PokemonDetail() {
   const normalSprite =
     raw?.sprites?.other?.['official-artwork']?.front_default ||
     raw?.sprites?.front_default;
-  const shinySprite =
+  const shinySpriteUrl =
     raw?.sprites?.other?.['official-artwork']?.front_shiny ||
     raw?.sprites?.front_shiny;
-  const sprite = shiny && shinySprite ? shinySprite : normalSprite;
+  const sprite = shiny && shinySpriteUrl ? shinySpriteUrl : normalSprite;
   const types = pokemon.description.split(', ');
   const mainType = types[0];
   const accent = TYPE_COLORS[mainType] || '#999';
@@ -124,7 +134,30 @@ export default function PokemonDetail() {
 
   return (
     <div className="container">
+      {confirmModal}
       <Link href="/" className="back-link">&larr; Back to Pokédex</Link>
+
+      {pokemon.prevPokemon || pokemon.nextPokemon ? (
+        <div className="prev-next-nav">
+          {pokemon.prevPokemon ? (
+            <Link
+              href={`/pokemon/${pokemon.prevPokemon.externalId}`}
+              className="prev-next-link prev-link"
+            >
+              &larr; {pokemon.prevPokemon.title}
+            </Link>
+          ) : <span />}
+          <span className="prev-next-label">#{pokemon.externalId.padStart(4, '0')}</span>
+          {pokemon.nextPokemon ? (
+            <Link
+              href={`/pokemon/${pokemon.nextPokemon.externalId}`}
+              className="prev-next-link next-link"
+            >
+              {pokemon.nextPokemon.title} &rarr;
+            </Link>
+          ) : <span />}
+        </div>
+      ) : null}
 
       <div className="detail-card" style={{ borderColor: accent }}>
         <div className="detail-header">
@@ -139,16 +172,7 @@ export default function PokemonDetail() {
             {isFav ? '★' : '☆'}
           </button>
           <div className="detail-image-wrap" style={{ background: `${accent}22` }}>
-            {sprite && (
-              <Image
-                src={sprite}
-                alt={pokemon.title}
-                width={240}
-                height={240}
-                className={`detail-image ${shiny ? 'shiny' : ''}`}
-                priority
-              />
-            )}
+            <PokemonSprite src={sprite} alt={pokemon.title} width={240} height={240} className={`detail-image ${shiny ? 'shiny' : ''}`} priority />
             <div className="scan-line" />
           </div>
           <div className="detail-title-section">
@@ -165,7 +189,7 @@ export default function PokemonDetail() {
               ))}
             </div>
             <div className="detail-actions">
-              {shinySprite && (
+              {shinySpriteUrl && (
                 <button
                   className={`btn btn-small ${shiny ? 'btn-shiny-active' : 'btn-shiny'}`}
                   onClick={() => setShiny(!shiny)}
@@ -219,9 +243,16 @@ export default function PokemonDetail() {
             </div>
             <div className="info-item">
               <span className="info-label">Abilities</span>
-              <span className="info-value">
-                {raw?.abilities?.map((a) => a.ability.name.replace('-', ' ')).join(', ') || 'N/A'}
-              </span>
+              <div className="ability-list">
+                {raw?.abilities?.length ? raw.abilities.map((a) => (
+                  <span key={a.ability.name} className="ability-tag">
+                    {a.ability.name.replace('-', ' ')}
+                    <span className={`ability-badge ${a.is_hidden ? 'hidden' : 'normal'}`}>
+                      {a.is_hidden ? 'Hidden' : 'Normal'}
+                    </span>
+                  </span>
+                )) : <span className="info-value">N/A</span>}
+              </div>
             </div>
           </div>
 
@@ -255,6 +286,10 @@ export default function PokemonDetail() {
               <RadarChart stats={raw?.stats} />
             </div>
           </div>
+
+          <SpeciesInfo externalId={pokemon.externalId} />
+          <EvolutionChain externalId={pokemon.externalId} />
+          <MoveList rawData={raw} />
         </div>
       </div>
 

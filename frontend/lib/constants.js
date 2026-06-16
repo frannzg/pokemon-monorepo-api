@@ -40,29 +40,21 @@ export const TYPE_CHART = {
 };
 
 export function calcTeamWeaknesses(teamTypes) {
-  const weaknesses = {};
-  const resistances = {};
-  ALL_TYPES.forEach((t) => {
-    weaknesses[t] = 0;
-    resistances[t] = 0;
-  });
-
-  teamTypes.forEach((type) => {
-    const chart = TYPE_CHART[type];
-    if (!chart) return;
-    chart.weak.forEach((t) => { weaknesses[t]++; });
-    chart.resist.forEach((t) => { resistances[t]++; });
-    chart.immune.forEach((t) => { resistances[t] += 99; });
-  });
-
   const result = [];
-  ALL_TYPES.forEach((t) => {
-    const net = weaknesses[t] - resistances[t];
-    if (net !== 0) {
+  ALL_TYPES.forEach((attackType) => {
+    let multiplier = 1;
+    teamTypes.forEach((defenderType) => {
+      const chart = TYPE_CHART[defenderType];
+      if (!chart) return;
+      if (chart.immune.includes(attackType)) multiplier = 0;
+      if (chart.weak.includes(attackType) && multiplier !== 0) multiplier *= 2;
+      if (chart.resist.includes(attackType) && multiplier !== 0) multiplier *= 0.5;
+    });
+    if (multiplier !== 1) {
       result.push({
-        type: t,
-        multiplier: net > 0 ? Math.min(4, net) : (net < -10 ? 0 : 0.5),
-        weak: net > 0,
+        type: attackType,
+        multiplier,
+        weak: multiplier > 1,
       });
     }
   });

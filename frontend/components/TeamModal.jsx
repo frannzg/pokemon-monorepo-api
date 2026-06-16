@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import {
   getExternalData,
   getTeamById,
@@ -9,6 +8,7 @@ import {
   updateTeam,
 } from '../services/backendApi';
 import TeamRoster from './TeamRoster';
+import PokemonSprite from './PokemonSprite';
 import { TYPE_COLORS, ALL_TYPES } from '../lib/constants';
 
 const ITEMS_PER_PAGE = 30;
@@ -25,6 +25,12 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   useEffect(() => {
     if (teamId) {
@@ -136,7 +142,7 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
               🎲 Random
             </button>
             <button className="btn btn-sync btn-small" onClick={handleSave} disabled={saving || roster.length === 0}>
-              {saving ? '...' : 'Save'}
+              {saving ? <><span className="btn-spinner" /> Saving</> : 'Save'}
             </button>
             <button className="btn btn-header btn-small" onClick={onClose}>Cancel</button>
           </div>
@@ -173,11 +179,7 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
             return (
               <div key={pokemon.externalId} className={`team-modal-pokemon ${inRoster ? 'in-roster' : ''}`}>
                 <div className="team-modal-pokemon-img">
-                  {sprite ? (
-                    <Image src={sprite} alt={pokemon.title} width={48} height={48} />
-                  ) : (
-                    <span className="no-sprite" style={{ width: 48, height: 48, fontSize: '1rem' }}>?</span>
-                  )}
+                  <PokemonSprite src={sprite} alt={pokemon.title} width={48} height={48} />
                 </div>
                 <div className="team-modal-pokemon-info">
                   <span className="team-modal-pokemon-name">{pokemon.title}</span>

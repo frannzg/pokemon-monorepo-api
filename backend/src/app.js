@@ -6,6 +6,12 @@ import teamRoutes from './routes/team.routes.js';
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  : ['http://localhost:3000'];
+
+app.use(cors({ origin: allowedOrigins }));
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -14,7 +20,6 @@ const limiter = rateLimit({
   message: { message: 'Too many requests, please try again later.' },
 });
 
-app.use(cors());
 app.use(express.json());
 app.use('/api/', limiter);
 

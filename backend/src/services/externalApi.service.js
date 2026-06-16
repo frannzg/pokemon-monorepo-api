@@ -30,3 +30,13 @@ export const fetchExternalData = async () => {
 
   return results;
 };
+
+export const fetchPokemonSpecies = async (speciesUrl) => {
+  const { data } = await axios.get(speciesUrl);
+  return data;
+};
+
+export const fetchEvolutionChain = async (evolutionUrl) => {
+  const { data } = await axios.get(evolutionUrl);
+  return data;
+};
