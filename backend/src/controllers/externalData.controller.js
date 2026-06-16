@@ -10,7 +10,12 @@ export const getStoredData = async (req, res) => {
       filter.title = { $regex: search, $options: 'i' };
     }
     if (type) {
-      filter.description = { $regex: type, $options: 'i' };
+      const types = type.split(',').map(t => t.trim()).filter(Boolean);
+      if (types.length === 1) {
+        filter.description = { $regex: types[0], $options: 'i' };
+      } else if (types.length > 1) {
+        filter.$and = types.map(t => ({ description: { $regex: t, $options: 'i' } }));
+      }
     }
 
     const pageNum = Math.max(1, parseInt(page));

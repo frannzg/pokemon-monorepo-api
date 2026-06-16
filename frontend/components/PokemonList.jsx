@@ -88,7 +88,7 @@ export default function PokemonList() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState([]);
   const [sortBy, setSortBy] = useState('id');
   const [page, setPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -99,7 +99,7 @@ export default function PokemonList() {
     try {
       const result = await getExternalData({
         search: search || undefined,
-        type: typeFilter || undefined,
+        type: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
         page,
         limit: ITEMS_PER_PAGE,
         sort: sortBy,
@@ -214,9 +214,9 @@ export default function PokemonList() {
             />
           </div>
           <div className="filter-header">
-            <span className="filter-label">Tipo</span>
-            {typeFilter && (
-              <button className="filter-reset-btn" onClick={() => { setTypeFilter(''); setPage(1); }}>
+            <span className="filter-label">Tipo {typeFilter.length > 0 && `(${typeFilter.length})`}</span>
+            {typeFilter.length > 0 && (
+              <button className="filter-reset-btn" onClick={() => { setTypeFilter([]); setPage(1); }}>
                 ✕ Limpiar
               </button>
             )}
@@ -225,10 +225,10 @@ export default function PokemonList() {
             {ALL_POKEMON_TYPES.map((type) => (
               <button
                 key={type}
-                className={`type-filter-badge ${typeFilter === type ? 'active' : ''}`}
+                className={`type-filter-badge ${typeFilter.includes(type) ? 'active' : ''}`}
                 style={{ backgroundColor: TYPE_COLORS[type] }}
                 onClick={() => {
-                  setTypeFilter(typeFilter === type ? '' : type);
+                  setTypeFilter(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
                   setPage(1);
                 }}
               >
@@ -244,8 +244,8 @@ export default function PokemonList() {
         {!loading && total > 0 && (
           <p className="filter-count">
             {data.length} of {total} pokemon
-            {(search || typeFilter) && (
-              <button className="clear-filter" onClick={() => { setSearch(''); setTypeFilter(''); setPage(1); }}>
+            {(search || typeFilter.length > 0) && (
+              <button className="clear-filter" onClick={() => { setSearch(''); setTypeFilter([]); setPage(1); }}>
                 Clear filters
               </button>
             )}
