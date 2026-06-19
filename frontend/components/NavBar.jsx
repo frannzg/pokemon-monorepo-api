@@ -8,8 +8,11 @@ import ThemeToggle from './ThemeToggle';
 const links = [
   { href: '/', label: 'Browse' },
   { href: '/abilities', label: 'Abilities' },
+  { href: '/compare', label: 'Compare' },
   { href: '/teams', label: 'Teams' },
   { href: '/battle', label: 'Battle' },
+  { href: '/pokedex-book', label: 'Pokédex' },
+  { href: '/trainer-card', label: 'Trainer Card' },
 ];
 
 export default function NavBar() {

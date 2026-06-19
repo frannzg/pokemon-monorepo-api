@@ -9,20 +9,20 @@ export const getExternalData = async (params = {}) => {
   if (params.limit) query.set('limit', params.limit);
   if (params.sort) query.set('sort', params.sort);
 
-  const url = `${BASE_URL}/api/external-data${query.toString() ? `?${query}` : ''}`;
+  const url = `${BASE_URL}/api/pokemon${query.toString() ? `?${query}` : ''}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch data');
   return res.json();
 };
 
 export const getPokemonById = async (id) => {
-  const res = await fetch(`${BASE_URL}/api/external-data/${id}`);
+  const res = await fetch(`${BASE_URL}/api/pokemon/${id}`);
   if (!res.ok) throw new Error('Pokemon not found');
   return res.json();
 };
 
 export const syncExternalData = async () => {
-  const res = await fetch(`${BASE_URL}/api/external-data/sync`, {
+  const res = await fetch(`${BASE_URL}/api/pokemon/sync`, {
     method: 'POST',
   });
   if (!res.ok) throw new Error('Failed to sync data');
@@ -30,7 +30,7 @@ export const syncExternalData = async () => {
 };
 
 export const deleteExternalData = async () => {
-  const res = await fetch(`${BASE_URL}/api/external-data`, {
+  const res = await fetch(`${BASE_URL}/api/pokemon`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete data');
@@ -38,7 +38,7 @@ export const deleteExternalData = async () => {
 };
 
 export const createPokemon = async (data) => {
-  const res = await fetch(`${BASE_URL}/api/external-data`, {
+  const res = await fetch(`${BASE_URL}/api/pokemon`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -48,7 +48,7 @@ export const createPokemon = async (data) => {
 };
 
 export const updatePokemon = async (externalId, data) => {
-  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}`, {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -58,7 +58,7 @@ export const updatePokemon = async (externalId, data) => {
 };
 
 export const deletePokemon = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}`, {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete pokemon');
@@ -106,13 +106,19 @@ export const deleteTeam = async (id) => {
 };
 
 export const getPokemonSpecies = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}/species`);
+  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}/species`);
   if (!res.ok) throw new Error('Species not found');
   return res.json();
 };
 
+export const getRandomPokemon = async () => {
+  const res = await fetch(`${BASE_URL}/api/pokemon/random`);
+  if (!res.ok) throw new Error('No pokemon available');
+  return res.json();
+};
+
 export const getPokemonEvolution = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/external-data/${externalId}/evolution`);
+  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}/evolution`);
   if (!res.ok) throw new Error('Evolution chain not found');
   return res.json();
 };

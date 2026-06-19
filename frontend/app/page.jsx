@@ -1,17 +1,18 @@
 import { Suspense } from 'react';
 import PokemonList from '../components/PokemonList';
+import PokemonOfTheDay from '../components/PokemonOfTheDay';
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="container">
-        <div className="loading-state">
-          <div className="pokeball-loader" />
-          <p>Loading...</p>
-        </div>
+    <>
+      <div className="container" style={{ paddingBottom: 0 }}>
+        <Suspense fallback={null}>
+          <PokemonOfTheDay />
+        </Suspense>
       </div>
-    }>
-      <PokemonList />
-    </Suspense>
+      <Suspense fallback={null}>
+        <PokemonList />
+      </Suspense>
+    </>
   );
 }

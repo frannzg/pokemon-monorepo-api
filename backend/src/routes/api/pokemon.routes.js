@@ -9,12 +9,14 @@ import {
   deletePokemonById,
   getPokemonSpecies,
   getPokemonEvolution,
-} from '../controllers/externalData.controller.js';
-import { validatePokemonInput } from '../middleware/validate.js';
+  getRandomPokemon,
+} from '../../controllers/pokemon.controller.js';
+import { validatePokemonInput } from '../../middleware/validate.js';
 
 const router = Router();
 
 router.get('/', getStoredData);
+router.get('/random', getRandomPokemon);
 router.get('/:externalId', getStoredDataById);
 router.get('/:externalId/species', getPokemonSpecies);
 router.get('/:externalId/evolution', getPokemonEvolution);

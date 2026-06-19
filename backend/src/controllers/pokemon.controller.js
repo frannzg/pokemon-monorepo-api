@@ -1,5 +1,5 @@
 import ExternalData from '../models/ExternalData.js';
-import { fetchExternalData, fetchPokemonSpecies, fetchEvolutionChain } from '../services/externalApi.service.js';
+import { fetchExternalData, fetchPokemonSpecies, fetchEvolutionChain } from '../services/pokeapi.service.js';
 
 export const getStoredData = async (req, res) => {
   try {
@@ -242,6 +242,17 @@ export const getPokemonEvolution = async (req, res) => {
 
     const evolutionData = await fetchEvolutionChain(evolutionUrl);
     res.json(evolutionData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getRandomPokemon = async (req, res) => {
+  try {
+    const count = await ExternalData.countDocuments();
+    if (count === 0) return res.status(404).json({ message: 'No pokemon available' });
+    const random = await ExternalData.aggregate([{ $sample: { size: 1 } }]);
+    res.json(random[0]);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

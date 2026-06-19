@@ -5,7 +5,7 @@ import {
   getTeamById,
   updateTeam,
   deleteTeam,
-} from '../controllers/team.controller.js';
+} from '../../controllers/team.controller.js';
 
 const router = Router();
 
