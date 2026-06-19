@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  getExternalData,
+  getPokemonList,
   getTeamById,
   createTeam,
   updateTeam,
@@ -44,7 +44,7 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
 
   useEffect(() => {
     if (initialPokemon && !teamId) {
-      setRoster([initialPokemon.externalId]);
+      setRoster([initialPokemon.pokemonId]);
       setRosterData([initialPokemon]);
     }
   }, [initialPokemon, teamId]);
@@ -53,7 +53,7 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
     setLoading(true);
     setError(null);
     try {
-      const result = await getExternalData({
+      const result = await getPokemonList({
         search: search || undefined,
         page,
         limit: ITEMS_PER_PAGE,
@@ -74,14 +74,14 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
   }, [fetchData]);
 
   const addToRoster = (pokemon) => {
-    if (roster.length >= 6 || roster.includes(pokemon.externalId)) return;
-    setRoster([...roster, pokemon.externalId]);
+    if (roster.length >= 6 || roster.includes(pokemon.pokemonId)) return;
+    setRoster([...roster, pokemon.pokemonId]);
     setRosterData([...rosterData, pokemon]);
   };
 
   const removeFromRoster = (externalId) => {
     setRoster(roster.filter((id) => id !== externalId));
-    setRosterData(rosterData.filter((p) => p.externalId !== externalId));
+    setRosterData(rosterData.filter((p) => p.pokemonId !== externalId));
   };
 
   const reorderRoster = (fromIdx, toIdx) => {
@@ -97,12 +97,12 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
 
   const handleRandomTeam = async () => {
     try {
-      const result = await getExternalData({ page: 1, limit: 2000, sort: 'id' });
+      const result = await getPokemonList({ page: 1, limit: 2000, sort: 'id' });
       const all = result.data || [];
       if (all.length === 0) return;
       const shuffled = all.sort(() => Math.random() - 0.5);
       const picked = shuffled.slice(0, 6);
-      setRoster(picked.map((p) => p.externalId));
+      setRoster(picked.map((p) => p.pokemonId));
       setRosterData(picked);
     } catch (err) {
       setError(err.message);
@@ -114,7 +114,7 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
     setSaving(true);
     setError(null);
     try {
-      const data = { name: teamName, pokemon: roster };
+      const data = { name: teamName, pokemonIds: roster };
       const saved = teamId ? await updateTeam(teamId, data) : await createTeam(data);
       onSaved?.(saved);
     } catch (err) {
@@ -173,16 +173,16 @@ export default function TeamModal({ teamId, initialPokemon, onClose, onSaved }) 
             </div>
           ))}
           {!loading && pokemonList.map((pokemon) => {
-            const inRoster = roster.includes(pokemon.externalId);
+            const inRoster = roster.includes(pokemon.pokemonId);
             const sprite = pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default || pokemon.rawData?.sprites?.front_default;
-            const types = pokemon.description.split(', ');
+            const types = pokemon.types.split(', ');
             return (
-              <div key={pokemon.externalId} className={`team-modal-pokemon ${inRoster ? 'in-roster' : ''}`}>
+              <div key={pokemon.pokemonId} className={`team-modal-pokemon ${inRoster ? 'in-roster' : ''}`}>
                 <div className="team-modal-pokemon-img">
-                  <PokemonSprite src={sprite} alt={pokemon.title} width={48} height={48} />
+                  <PokemonSprite src={sprite} alt={pokemon.name} width={48} height={48} />
                 </div>
                 <div className="team-modal-pokemon-info">
-                  <span className="team-modal-pokemon-name">{pokemon.title}</span>
+                  <span className="team-modal-pokemon-name">{pokemon.name}</span>
                   <div className="card-types">
                     {types.map((t) => (
                       <span key={t} className="type-badge" style={{ backgroundColor: TYPE_COLORS[t] || '#999', fontSize: '0.6rem' }}>

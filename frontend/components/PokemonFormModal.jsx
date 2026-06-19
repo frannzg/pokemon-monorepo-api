@@ -35,8 +35,8 @@ export default function PokemonFormModal({ pokemon, onClose, onSaved }) {
   const prevStats = {};
   (prevRaw.stats || []).forEach((s) => { prevStats[s.stat.name] = s.base_stat; });
 
-  const [name, setName] = useState(pokemon?.title || '');
-  const [types, setTypes] = useState(pokemon?.description ? pokemon.description.split(', ') : []);
+  const [name, setName] = useState(pokemon?.name || '');
+  const [types, setTypes] = useState(pokemon?.types ? pokemon.types.split(', ') : []);
   const [hp, setHp] = useState(prevStats.hp || 0);
   const [attack, setAttack] = useState(prevStats.attack || 0);
   const [defense, setDefense] = useState(prevStats.defense || 0);
@@ -72,7 +72,7 @@ export default function PokemonFormModal({ pokemon, onClose, onSaved }) {
     setError(null);
     try {
       const data = {
-        title: name.trim(),
+        name: name.trim(),
         types,
         stats: { hp, attack, defense, 'special-attack': spAttack, 'special-defense': spDefense, speed },
         height,
@@ -82,7 +82,7 @@ export default function PokemonFormModal({ pokemon, onClose, onSaved }) {
         sprite,
         shinySprite,
       };
-      const result = isEdit ? await updatePokemon(pokemon.externalId, data) : await createPokemon(data);
+      const result = isEdit ? await updatePokemon(pokemon.pokemonId, data) : await createPokemon(data);
       onSaved?.(result);
     } catch (err) {
       setError(err.message);

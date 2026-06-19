@@ -1,6 +1,6 @@
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-export const getExternalData = async (params = {}) => {
+export const getPokemonList = async (params = {}) => {
   const query = new URLSearchParams();
   if (params.search) query.set('search', params.search);
   if (params.type) query.set('type', params.type);
@@ -21,7 +21,7 @@ export const getPokemonById = async (id) => {
   return res.json();
 };
 
-export const syncExternalData = async () => {
+export const syncPokemonData = async () => {
   const res = await fetch(`${BASE_URL}/api/pokemon/sync`, {
     method: 'POST',
   });
@@ -29,7 +29,7 @@ export const syncExternalData = async () => {
   return res.json();
 };
 
-export const deleteExternalData = async () => {
+export const deleteAllPokemon = async () => {
   const res = await fetch(`${BASE_URL}/api/pokemon`, {
     method: 'DELETE',
   });
@@ -47,8 +47,8 @@ export const createPokemon = async (data) => {
   return res.json();
 };
 
-export const updatePokemon = async (externalId, data) => {
-  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}`, {
+export const updatePokemon = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -57,8 +57,8 @@ export const updatePokemon = async (externalId, data) => {
   return res.json();
 };
 
-export const deletePokemon = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}`, {
+export const deletePokemon = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete pokemon');
@@ -105,8 +105,8 @@ export const deleteTeam = async (id) => {
   return res.json();
 };
 
-export const getPokemonSpecies = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}/species`);
+export const getPokemonSpecies = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${id}/species`);
   if (!res.ok) throw new Error('Species not found');
   return res.json();
 };
@@ -117,8 +117,8 @@ export const getRandomPokemon = async () => {
   return res.json();
 };
 
-export const getPokemonEvolution = async (externalId) => {
-  const res = await fetch(`${BASE_URL}/api/pokemon/${externalId}/evolution`);
+export const getPokemonEvolution = async (id) => {
+  const res = await fetch(`${BASE_URL}/api/pokemon/${id}/evolution`);
   if (!res.ok) throw new Error('Evolution chain not found');
   return res.json();
 };

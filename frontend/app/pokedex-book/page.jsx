@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { getExternalData } from '../../services/backendApi';
+import { getPokemonList } from '../../services/backendApi';
 import PokemonSprite from '../../components/PokemonSprite';
 import { TYPE_COLORS, ALL_TYPES } from '../../lib/constants';
 
@@ -10,20 +10,20 @@ const ITEMS_PER_PAGE = 30;
 
 function PokedexRow({ pokemon, selected, onSelect }) {
   const sprite = pokemon.rawData?.sprites?.front_default || pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default;
-  const types = pokemon.description.split(', ');
-  const isActive = selected?.externalId === pokemon.externalId;
+  const types = pokemon.types.split(', ');
+  const isActive = selected?.pokemonId === pokemon.pokemonId;
 
   return (
     <button
-      data-id={pokemon.externalId}
+      data-id={pokemon.pokemonId}
       className={`ds-row ${isActive ? 'active' : ''}`}
       onClick={() => onSelect(pokemon)}
     >
-      <span className="ds-row-num">#{pokemon.externalId.padStart(4, '0')}</span>
+      <span className="ds-row-num">#{pokemon.pokemonId.padStart(4, '0')}</span>
       <div className="ds-row-sprite">
         <PokemonSprite src={sprite} alt="" width={36} height={36} />
       </div>
-      <span className="ds-row-name">{pokemon.title}</span>
+      <span className="ds-row-name">{pokemon.name}</span>
       <div className="ds-row-types">
         {types.map(t => (
           <span key={t} className="ds-row-type" style={{ backgroundColor: TYPE_COLORS[t] }}>
@@ -54,7 +54,7 @@ export default function PokedexBookPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getExternalData({
+      const result = await getPokemonList({
         search: search || undefined,
         type: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
         page,
@@ -84,20 +84,20 @@ export default function PokedexBookPage() {
   };
 
   const handleSelect = (pokemon) => {
-    if (selected?.externalId !== pokemon.externalId) {
+    if (selected?.pokemonId !== pokemon.pokemonId) {
       prevSelectedRef.current = selected;
       setFadeKey(k => k + 1);
     }
     setSelected(pokemon);
     if (listRef.current) {
-      const el = listRef.current.querySelector(`[data-id="${pokemon.externalId}"]`);
+      const el = listRef.current.querySelector(`[data-id="${pokemon.pokemonId}"]`);
       if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   };
 
   const visibleTypes = showAllTypes ? ALL_TYPES : ALL_TYPES.slice(0, 6);
   const selectedSprite = selected?.rawData?.sprites?.other?.['official-artwork']?.front_default || selected?.rawData?.sprites?.front_default;
-  const selectedTypes = selected ? selected.description.split(', ') : [];
+  const selectedTypes = selected ? selected.types.split(', ') : [];
 
   return (
     <div className="container ds-page">
@@ -107,13 +107,13 @@ export default function PokedexBookPage() {
           {selected ? (
             <div key={fadeKey} className="ds-top-content ds-fade-in" ref={topRef}>
               <div className="ds-sprite-wrap">
-                <Link href={`/pokemon/${selected.externalId}`}>
-                  <PokemonSprite src={selectedSprite} alt={selected.title} width={140} height={140} priority />
+                <Link href={`/pokemon/${selected.pokemonId}`}>
+                  <PokemonSprite src={selectedSprite} alt={selected.name} width={140} height={140} priority />
                 </Link>
               </div>
               <div className="ds-top-info">
-                <div className="ds-top-number">#{selected.externalId.padStart(4, '0')}</div>
-                <div className="ds-top-name">{selected.title}</div>
+                <div className="ds-top-number">#{selected.pokemonId.padStart(4, '0')}</div>
+                <div className="ds-top-name">{selected.name}</div>
                 <div className="ds-top-types">
                   {selectedTypes.map(t => (
                     <span key={t} className="type-badge ds-type-badge" style={{ backgroundColor: TYPE_COLORS[t] }}>
@@ -191,7 +191,7 @@ export default function PokedexBookPage() {
               <div className="ds-loading">No Pokémon found</div>
             ) : (
               data.map(pokemon => (
-                <PokedexRow key={pokemon.externalId} pokemon={pokemon} selected={selected} onSelect={handleSelect} />
+                <PokedexRow key={pokemon.pokemonId} pokemon={pokemon} selected={selected} onSelect={handleSelect} />
               ))
             )}
           </div>

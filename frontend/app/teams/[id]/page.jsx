@@ -64,8 +64,8 @@ export default function TeamDetailPage() {
 
     setSaving(true);
     try {
-      const newIds = newData.map((p) => p.externalId);
-      await updateTeam(id, { pokemon: newIds });
+      const newIds = newData.map((p) => p.pokemonId);
+      await updateTeam(id, { pokemonIds: newIds });
     } catch (err) {
       setError(err.message);
       load();
@@ -115,7 +115,7 @@ export default function TeamDetailPage() {
 
   const teamTypes = [];
   pokemonData.forEach((p) => {
-    p.description.split(', ').forEach((t) => { if (!teamTypes.includes(t)) teamTypes.push(t); });
+    p.types.split(', ').forEach((t) => { if (!teamTypes.includes(t)) teamTypes.push(t); });
   });
 
   const teamStats = {};
@@ -168,13 +168,13 @@ export default function TeamDetailPage() {
             const sprite =
               pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default ||
               pokemon.rawData?.sprites?.front_default;
-            const types = pokemon.description.split(', ');
+            const types = pokemon.types.split(', ');
             const mainType = types[0];
             const accent = TYPE_COLORS[mainType] || '#999';
 
             return (
               <div
-                key={pokemon.externalId}
+                key={pokemon.pokemonId}
                 className={`detail-slot ${dragIdx === i ? 'dragging' : ''}`}
                 style={{ borderColor: accent }}
                 draggable
@@ -185,16 +185,16 @@ export default function TeamDetailPage() {
               >
                 <span className="detail-slot-drag-handle">⠿</span>
                 <span className="detail-slot-idx">{i + 1}</span>
-                <Link href={`/pokemon/${pokemon.externalId}`} className="detail-slot-link">
+                <Link href={`/pokemon/${pokemon.pokemonId}`} className="detail-slot-link">
                   <div className="card" style={{ borderColor: 'transparent', boxShadow: 'none' }}>
                     <div className="card-id">
-                      #{pokemon.externalId.padStart(4, '0')}
+                      #{pokemon.pokemonId.padStart(4, '0')}
                     </div>
                     <div className="card-image">
-                      <PokemonSprite src={sprite} alt={pokemon.title} width={110} height={110} className="card-img" />
+                      <PokemonSprite src={sprite} alt={pokemon.name} width={110} height={110} className="card-img" />
                     </div>
                     <div className="card-body">
-                      <h3 className="card-name">{pokemon.title}</h3>
+                      <h3 className="card-name">{pokemon.name}</h3>
                       <div className="card-types">
                         {types.map((type) => (
                           <span

@@ -21,7 +21,7 @@ export default function TeamCard({ team }) {
             const sprite =
               pokemon?.rawData?.sprites?.other?.['official-artwork']?.front_default ||
               pokemon?.rawData?.sprites?.front_default;
-            const types = pokemon ? pokemon.description.split(', ') : [];
+            const types = pokemon ? pokemon.types.split(', ') : [];
             const mainType = types[0];
             const accent = TYPE_COLORS[mainType] || '#999';
 
@@ -33,8 +33,8 @@ export default function TeamCard({ team }) {
               >
                 {pokemon ? (
                   <>
-                    <PokemonSprite src={sprite} alt={pokemon.title} width={64} height={64} className="team-card-slot-img" />
-                    <span className="team-card-slot-name">{pokemon.title}</span>
+                    <PokemonSprite src={sprite} alt={pokemon.name} width={64} height={64} className="team-card-slot-img" />
+                    <span className="team-card-slot-name">{pokemon.name}</span>
                     <div className="team-card-slot-types">
                       {types.map((t) => (
                         <span

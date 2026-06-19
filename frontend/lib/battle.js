@@ -94,7 +94,7 @@ function maxHP(pokemon) {
 }
 
 export async function preparePokemon(pokemon) {
-  const types = pokemon.description?.split(', ') || [];
+  const types = pokemon.types?.split(', ') || [];
   const moves = pokemon.rawData?.moves || [];
 
   const topMoves = moves
@@ -110,8 +110,8 @@ export async function preparePokemon(pokemon) {
 
   const hp = maxHP(pokemon);
   return {
-    externalId: pokemon.externalId,
-    title: pokemon.title,
+    pokemonId: pokemon.pokemonId,
+    name: pokemon.name,
     types,
     sprite: getSpriteUrl(pokemon),
     maxHP: hp,
@@ -153,14 +153,14 @@ export async function planBattle(team1Raw, team2Raw) {
       const { damage, effectiveness, critical } = calcDamage(attacker, defender, move);
       defender.currentHP = Math.max(0, defender.currentHP - damage);
 
-      const attackerKey = attacker.title;
+      const attackerKey = attacker.name;
       damageLog[attackerKey] = (damageLog[attackerKey] || 0) + damage;
 
       snapshot({
         type: 'attack',
-        attacker: attacker.title,
+        attacker: attacker.name,
         attackerTeam,
-        defender: defender.title,
+        defender: defender.name,
         defenderTeam: attackerTeam === 1 ? 2 : 1,
         move: move.name,
         moveType: move.type,
@@ -170,7 +170,7 @@ export async function planBattle(team1Raw, team2Raw) {
       });
       if (defender.currentHP <= 0) {
         defender.fainted = true;
-        snapshot({ type: 'faint', fainted: defender.title, faintedTeam: attackerTeam === 1 ? 2 : 1 });
+        snapshot({ type: 'faint', fainted: defender.name, faintedTeam: attackerTeam === 1 ? 2 : 1 });
         return true;
       }
       return false;

@@ -4,9 +4,9 @@ import { useState, useEffect, memo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  getExternalData,
-  syncExternalData,
-  deleteExternalData,
+  getPokemonList,
+  syncPokemonData,
+  deleteAllPokemon,
   deletePokemon,
 } from '../services/backendApi';
 import TeamModal from './TeamModal';
@@ -52,25 +52,25 @@ const PokemonCard = memo(function PokemonCard({ pokemon, onAddToTeam, onEdit, on
   const sprite =
     pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default ||
     pokemon.rawData?.sprites?.front_default;
-  const types = pokemon.description.split(', ');
+  const types = pokemon.types.split(', ');
 
   return (
     <div className="card-link-wrapper">
-      <Link href={`/pokemon/${pokemon.externalId}`} className="card-link">
+      <Link href={`/pokemon/${pokemon.pokemonId}`} className="card-link">
         <div className="card">
-          <div className="card-id">#{pokemon.externalId.padStart(4, '0')}</div>
+          <div className="card-id">#{pokemon.pokemonId.padStart(4, '0')}</div>
           <button
             className={`btn-fav ${isFavorite ? 'fav-active' : ''}`}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(pokemon.externalId); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(pokemon.pokemonId); }}
             title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite ? '★' : '☆'}
           </button>
           <div className="card-image">
-            <PokemonSprite src={sprite} alt={pokemon.title} width={110} height={110} className="card-img" />
+            <PokemonSprite src={sprite} alt={pokemon.name} width={110} height={110} className="card-img" />
           </div>
           <div className="card-body">
-            <h3 className="card-name">{pokemon.title}</h3>
+            <h3 className="card-name">{pokemon.name}</h3>
             <div className="card-types">
               {types.map((type) => (
                 <span
@@ -172,7 +172,7 @@ export default function PokemonList() {
     setLoading(true);
     setError(null);
     try {
-      const result = await getExternalData({
+      const result = await getPokemonList({
         search: search || undefined,
         type: typeFilter.length > 0 ? typeFilter.join(',') : undefined,
         ids: favoriteFilter && favorites.length > 0 ? favorites.join(',') : undefined,
@@ -211,7 +211,7 @@ export default function PokemonList() {
     setSyncing(true);
     setError(null);
     try {
-      const result = await syncExternalData();
+      const result = await syncPokemonData();
       const now = new Date().toISOString();
       localStorage.setItem('pokemon-last-sync', now);
       setLastSync(now);
@@ -231,7 +231,7 @@ export default function PokemonList() {
     setLoading(true);
     setError(null);
     try {
-      await deleteExternalData();
+      await deleteAllPokemon();
       setData([]);
       setTotal(0);
       setTotalPages(0);
@@ -244,11 +244,11 @@ export default function PokemonList() {
   };
 
   const handleDeletePokemon = async (pokemon) => {
-    const ok = await confirm(`Delete ${pokemon.title}?`);
+    const ok = await confirm(`Delete ${pokemon.name}?`);
     if (!ok) return;
     try {
-      await deletePokemon(pokemon.externalId);
-      showToast(`${pokemon.title} deleted`, 'success');
+      await deletePokemon(pokemon.pokemonId);
+      showToast(`${pokemon.name} deleted`, 'success');
       await fetchData();
     } catch (err) {
       setError(err.message);
@@ -410,12 +410,12 @@ export default function PokemonList() {
           <div className="grid staggered-fade">
             {data.map((pokemon) => (
               <PokemonCard
-                key={pokemon.externalId}
+                key={pokemon.pokemonId}
                 pokemon={pokemon}
                 onAddToTeam={openTeamModal}
                 onEdit={openFormModal}
                 onDelete={handleDeletePokemon}
-                isFavorite={favorites.includes(pokemon.externalId)}
+                isFavorite={favorites.includes(pokemon.pokemonId)}
                 onToggleFavorite={toggleFavorite}
               />
             ))}

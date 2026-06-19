@@ -37,13 +37,13 @@ export default function TeamRoster({ roster, onRemove, onReorder }) {
     const sprite =
       pokemon?.rawData?.sprites?.other?.['official-artwork']?.front_default ||
       pokemon?.rawData?.sprites?.front_default;
-    const types = pokemon ? pokemon.description.split(', ') : [];
+    const types = pokemon ? pokemon.types.split(', ') : [];
     const mainType = types[0];
     const accent = TYPE_COLORS[mainType] || '#333';
 
     slots.push(
       <div
-        key={pokemon?._id || pokemon?.externalId || `empty-${i}`}
+        key={pokemon?._id || pokemon?.pokemonId || `empty-${i}`}
         className={`team-slot ${pokemon ? 'team-slot-filled' : 'team-slot-empty'} ${dragIdx === i ? 'dragging' : ''}`}
         style={pokemon ? { borderColor: accent } : {}}
         draggable={!!pokemon}
@@ -55,12 +55,12 @@ export default function TeamRoster({ roster, onRemove, onReorder }) {
         {pokemon ? (
           <>
             <span className="team-slot-drag-handle">⠿</span>
-            <PokemonSprite src={sprite} alt={pokemon.title} width={64} height={64} className="team-slot-img" />
-            <span className="team-slot-name">{pokemon.title}</span>
+            <PokemonSprite src={sprite} alt={pokemon.name} width={64} height={64} className="team-slot-img" />
+            <span className="team-slot-name">{pokemon.name}</span>
             <button
               className="btn-remove-slot"
-              onClick={() => onRemove(pokemon.externalId)}
-              title={`Remove ${pokemon.title}`}
+              onClick={() => onRemove(pokemon.pokemonId)}
+              title={`Remove ${pokemon.name}`}
             >
               ✕
             </button>

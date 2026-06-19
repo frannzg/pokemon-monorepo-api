@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getExternalData, getPokemonById } from '../../services/backendApi';
+import { getPokemonList, getPokemonById } from '../../services/backendApi';
 import PokemonSprite from '../../components/PokemonSprite';
 import CompareRadar from '../../components/CompareRadar';
 import { TYPE_COLORS, STATS_META } from '../../lib/constants';
@@ -51,7 +51,7 @@ function PokemonSelector({ index, pokemon, pokemonData, search, results, loading
   }, [focusIdx]);
 
   const sprite = pokemonData?.rawData?.sprites?.other?.['official-artwork']?.front_default || pokemonData?.rawData?.sprites?.front_default;
-  const types = pokemonData ? pokemonData.description.split(', ') : [];
+  const types = pokemonData ? pokemonData.types.split(', ') : [];
 
   return (
     <div
@@ -91,14 +91,14 @@ function PokemonSelector({ index, pokemon, pokemonData, search, results, loading
                 const s = p.rawData?.sprites?.other?.['official-artwork']?.front_default || p.rawData?.sprites?.front_default;
                 return (
                   <button
-                    key={p.externalId}
+                    key={p.pokemonId}
                     className={`compare-search-item ${i === focusIdx ? 'focused' : ''}`}
                     onMouseEnter={() => setFocusIdx(i)}
                     onClick={() => { onSelect(p); setOpen(false); }}
                   >
-                    <img src={s} alt={p.title} width={36} height={36} className="compare-search-item-sprite" loading="lazy" />
-                    <span className="compare-search-item-id">#{p.externalId.padStart(4, '0')}</span>
-                    <span className="compare-search-item-name">{highlightText(p.title, search)}</span>
+                    <img src={s} alt={p.name} width={36} height={36} className="compare-search-item-sprite" loading="lazy" />
+                    <span className="compare-search-item-id">#{p.pokemonId.padStart(4, '0')}</span>
+                    <span className="compare-search-item-name">{highlightText(p.name, search)}</span>
                   </button>
                 );
               })}
@@ -109,9 +109,9 @@ function PokemonSelector({ index, pokemon, pokemonData, search, results, loading
       ) : (
         <div className="compare-selected">
           <div className="compare-selected-sprite">
-            <PokemonSprite src={sprite} alt={pokemonData.title} width={140} height={140} />
+            <PokemonSprite src={sprite} alt={pokemonData.name} width={140} height={140} />
           </div>
-          <Link href={`/pokemon/${pokemonData.externalId}`} className="compare-selected-name">{pokemonData.title}</Link>
+          <Link href={`/pokemon/${pokemonData.pokemonId}`} className="compare-selected-name">{pokemonData.name}</Link>
           <div className="compare-selected-types">
             {types.map((t) => (
               <span key={t} className="type-badge" style={{ backgroundColor: TYPE_COLORS[t] || '#999' }}>{t}</span>
@@ -189,7 +189,7 @@ function ComparePageContent() {
     if (!query.trim()) { setResults([]); setLoading(false); return; }
     setLoading(true);
     try {
-      const result = await getExternalData({ search: query, limit: 10, sort: 'id' });
+      const result = await getPokemonList({ search: query, limit: 10, sort: 'id' });
       setResults(result.data || []);
     } catch { setResults([]); }
     setLoading(false);
@@ -214,17 +214,17 @@ function ComparePageContent() {
     const setResults = slot === 1 ? setResults1 : setResults2;
     const setLoadingDetail = slot === 1 ? setLoadingDetail1 : setLoadingDetail2;
 
-    setPokemon(p.externalId);
+    setPokemon(p.pokemonId);
     setSearch('');
     setResults([]);
     setLoadingDetail(true);
     try {
-      const detail = await getPokemonById(p.externalId);
+      const detail = await getPokemonById(p.pokemonId);
       setPokemonData(detail);
     } catch { setPokemonData(p); }
     setLoadingDetail(false);
 
-    updateURL(slot === 1 ? p.externalId : undefined, slot === 2 ? p.externalId : undefined);
+    updateURL(slot === 1 ? p.pokemonId : undefined, slot === 2 ? p.pokemonId : undefined);
   };
 
   const clearPokemon = (slot) => {
@@ -245,8 +245,8 @@ function ComparePageContent() {
   useEffect(() => {
     const p1 = searchParams.get('p1');
     const p2 = searchParams.get('p2');
-    if (p1 && !pokemon1) selectPokemon(1, { externalId: p1 });
-    if (p2 && !pokemon2) selectPokemon(2, { externalId: p2 });
+    if (p1 && !pokemon1) selectPokemon(1, { pokemonId: p1 });
+    if (p2 && !pokemon2) selectPokemon(2, { pokemonId: p2 });
   }, []);
 
   const handleDragStart = (i) => setDragIdx(i);
@@ -415,13 +415,13 @@ function ComparePageContent() {
             <div className="compare-verdict-card">
               <div className="verdict-crown">{bst1 === bst2 ? '🤝' : '👑'}</div>
               <h3 className="verdict-title">
-                {bst1 > bst2 ? pokemonData1.title : bst2 > bst1 ? pokemonData2.title : 'It\'s a tie!'}
+                {bst1 > bst2 ? pokemonData1.name : bst2 > bst1 ? pokemonData2.name : 'It\'s a tie!'}
               </h3>
               <p className="verdict-sub">
                 {bst1 > bst2
-                  ? `${pokemonData1.title} wins with ${bst1} BST vs ${bst2} BST`
+                  ? `${pokemonData1.name} wins with ${bst1} BST vs ${bst2} BST`
                   : bst2 > bst1
-                    ? `${pokemonData2.title} wins with ${bst2} BST vs ${bst1} BST`
+                    ? `${pokemonData2.name} wins with ${bst2} BST vs ${bst1} BST`
                     : `Both have ${bst1} BST`}
               </p>
               <div className="verdict-stats">

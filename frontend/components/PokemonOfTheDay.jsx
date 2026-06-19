@@ -44,7 +44,7 @@ export default function PokemonOfTheDay() {
   const sprite =
     pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default ||
     pokemon.rawData?.sprites?.front_default;
-  const types = pokemon.description.split(', ');
+  const types = pokemon.types.split(', ');
   const mainType = types[0];
   const accent = TYPE_COLORS[mainType] || '#999';
 
@@ -53,13 +53,13 @@ export default function PokemonOfTheDay() {
       <div className="potd-badge" style={{ background: accent }}>Pokémon of the Day</div>
       <div className="potd-body">
         <div className="potd-sprite-wrap" style={{ background: `${accent}15` }}>
-          <Link href={`/pokemon/${pokemon.externalId}`}>
-            <PokemonSprite src={sprite} alt={pokemon.title} width={130} height={130} className="potd-sprite" />
+          <Link href={`/pokemon/${pokemon.pokemonId}`}>
+            <PokemonSprite src={sprite} alt={pokemon.name} width={130} height={130} className="potd-sprite" />
           </Link>
         </div>
         <div className="potd-info">
-          <div className="potd-id" style={{ color: accent }}>#{pokemon.externalId.padStart(4, '0')}</div>
-          <Link href={`/pokemon/${pokemon.externalId}`} className="potd-name">{pokemon.title}</Link>
+          <div className="potd-id" style={{ color: accent }}>#{pokemon.pokemonId.padStart(4, '0')}</div>
+          <Link href={`/pokemon/${pokemon.pokemonId}`} className="potd-name">{pokemon.name}</Link>
           <div className="potd-types">
             {types.map((t) => (
               <span key={t} className="type-badge" style={{ backgroundColor: TYPE_COLORS[t] }}>

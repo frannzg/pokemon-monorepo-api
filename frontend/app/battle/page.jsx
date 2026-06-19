@@ -32,9 +32,9 @@ function RosterSlot({ pokemon, isActive }) {
 
   return (
     <div className={`roster-slot ${isActive ? 'slot-active' : ''} ${pokemon.fainted ? 'slot-fainted' : ''}`}>
-      <PokemonSprite src={pokemon.sprite} alt={cleanName(pokemon.title)} width={52} height={52} />
+      <PokemonSprite src={pokemon.sprite} alt={cleanName(pokemon.name)} width={52} height={52} />
       <div className="roster-slot-info">
-        <div className="roster-slot-name">{cleanName(pokemon.title)}</div>
+        <div className="roster-slot-name">{cleanName(pokemon.name)}</div>
         <div className="roster-slot-bar">
           <div className="roster-slot-hp" style={{ width: `${Math.max(0, pct)}%`, backgroundColor: hpColor }} />
         </div>
@@ -50,7 +50,7 @@ function ActiveBattle({ pokemon, team, shake, damagePopupData, lastDamage }) {
       <div className="active-sprite-wrap">
         <PokemonSprite
           src={pokemon?.sprite}
-          alt={cleanName(pokemon?.title)}
+          alt={cleanName(pokemon?.name)}
           width={140} height={140}
           className={`active-sprite ${pokemon?.fainted ? 'fainted' : ''}`}
         />
@@ -60,7 +60,7 @@ function ActiveBattle({ pokemon, team, shake, damagePopupData, lastDamage }) {
         )}
       </div>
       <div className={`active-panel ${team === 1 ? 'panel-team1' : 'panel-team2'}`}>
-        <div className="active-name">{cleanName(pokemon?.title)}</div>
+        <div className="active-name">{cleanName(pokemon?.name)}</div>
         <div className="hp-bar-track">
           <div className="hp-bar-fill" style={{
             width: `${pokemon ? Math.min(100, (pokemon.currentHP / pokemon.maxHP) * 100) : 0}%`,
@@ -248,7 +248,7 @@ export default function BattlePage() {
             </div>
             <div className="roster-list">
               {s.team1.map((p, i) => (
-                <RosterSlot key={p.externalId} pokemon={p} isActive={i === s.active1} />
+                <RosterSlot key={p.pokemonId} pokemon={p} isActive={i === s.active1} />
               ))}
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function BattlePage() {
           </div>
           <div className="roster-list">
             {s.team2.map((p, i) => (
-              <RosterSlot key={p.externalId} pokemon={p} isActive={i === s.active2} />
+              <RosterSlot key={p.pokemonId} pokemon={p} isActive={i === s.active2} />
             ))}
           </div>
         </div>
@@ -340,11 +340,11 @@ export default function BattlePage() {
               <div className="result-team">
                 <h4 className={winner === 1 ? 'result-winner' : ''}>{battleTeam1Name}</h4>
                 {snapshots[snapshots.length - 1]?.team1.map(p => (
-                  <div key={p.externalId} className={`result-member ${p.fainted ? 'fallen' : 'alive'}`}>
+                  <div key={p.pokemonId} className={`result-member ${p.fainted ? 'fallen' : 'alive'}`}>
                     <span>{p.fainted ? '💀' : '✅'}</span>
-                    <span>{cleanName(p.title)}</span>
+                    <span>{cleanName(p.name)}</span>
                     <span className="result-hp">{p.currentHP}/{p.maxHP}</span>
-                    <span className="result-dmg">{damageLog[p.title] || 0} dmg</span>
+                    <span className="result-dmg">{damageLog[p.name] || 0} dmg</span>
                   </div>
                 ))}
               </div>
@@ -352,11 +352,11 @@ export default function BattlePage() {
               <div className="result-team">
                 <h4 className={winner === 2 ? 'result-winner' : ''}>{battleTeam2Name}</h4>
                 {snapshots[snapshots.length - 1]?.team2.map(p => (
-                  <div key={p.externalId} className={`result-member ${p.fainted ? 'fallen' : 'alive'}`}>
+                  <div key={p.pokemonId} className={`result-member ${p.fainted ? 'fallen' : 'alive'}`}>
                     <span>{p.fainted ? '💀' : '✅'}</span>
-                    <span>{cleanName(p.title)}</span>
+                    <span>{cleanName(p.name)}</span>
                     <span className="result-hp">{p.currentHP}/{p.maxHP}</span>
-                    <span className="result-dmg">{damageLog[p.title] || 0} dmg</span>
+                    <span className="result-dmg">{damageLog[p.name] || 0} dmg</span>
                   </div>
                 ))}
               </div>

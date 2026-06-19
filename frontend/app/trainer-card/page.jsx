@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getExternalData } from '../../services/backendApi';
+import { getPokemonList } from '../../services/backendApi';
 import PokemonSprite from '../../components/PokemonSprite';
 import { TYPE_COLORS } from '../../lib/constants';
 
@@ -78,7 +78,7 @@ export default function TrainerCardPage() {
     if (!q.trim()) { setSearchResults([]); return; }
     setSearchLoading(true);
     try {
-      const res = await getExternalData({ search: q, limit: 10, sort: 'id' });
+      const res = await getPokemonList({ search: q, limit: 10, sort: 'id' });
       setSearchResults(res.data);
     } catch { setSearchResults([]); }
     setSearchLoading(false);
@@ -190,13 +190,13 @@ export default function TrainerCardPage() {
 
       ctx.font = 'bold 18px monospace';
       ctx.fillStyle = textPrimary;
-      ctx.fillText(pokemon.title, 90, 90);
+      ctx.fillText(pokemon.name, 90, 90);
 
       ctx.font = 'bold 16px monospace';
       ctx.fillStyle = textMuted;
-      ctx.fillText('#' + pokemon.externalId.padStart(4, '0'), 90, 132);
+      ctx.fillText('#' + pokemon.pokemonId.padStart(4, '0'), 90, 132);
 
-      const types = pokemon.description.split(', ');
+      const types = pokemon.types.split(', ');
       types.forEach((type, i) => {
         ctx.fillStyle = TYPE_COLORS[type] || '#999';
         const x = 90 + i * 72;
@@ -343,18 +343,18 @@ export default function TrainerCardPage() {
                     const sprite = p.rawData?.sprites?.other?.['official-artwork']?.front_default || p.rawData?.sprites?.front_default;
                     return (
                       <button
-                        key={p.externalId}
+                        key={p.pokemonId}
                         className="tc-search-item"
                         onClick={() => {
                           setPokemon(p);
-                          setSearchInput(`#${p.externalId} ${p.title}`);
+                          setSearchInput(`#${p.pokemonId} ${p.name}`);
                           setSearchOpen(false);
                           setSearchResults([]);
                         }}
                       >
                         <PokemonSprite src={sprite} alt="" width={36} height={36} />
-                        <span className="tc-search-item-id">#{p.externalId.padStart(4, '0')}</span>
-                        <span className="tc-search-item-name">{highlightText(p.title, searchInput)}</span>
+                        <span className="tc-search-item-id">#{p.pokemonId.padStart(4, '0')}</span>
+                        <span className="tc-search-item-name">{highlightText(p.name, searchInput)}</span>
                       </button>
                     );
                   })}
@@ -365,14 +365,14 @@ export default function TrainerCardPage() {
               <div className="tc-selected-pokemon">
                 <PokemonSprite
                   src={pokemon.rawData?.sprites?.other?.['official-artwork']?.front_default || pokemon.rawData?.sprites?.front_default}
-                  alt={pokemon.title}
+                  alt={pokemon.name}
                   width={48}
                   height={48}
                 />
                 <div>
-                  <strong>#{pokemon.externalId.padStart(4, '0')} {pokemon.title}</strong>
+                  <strong>#{pokemon.pokemonId.padStart(4, '0')} {pokemon.name}</strong>
                   <div className="tc-selected-types">
-                    {pokemon.description.split(', ').map(t => (
+                    {pokemon.types.split(', ').map(t => (
                       <span key={t} className="type-badge" style={{ backgroundColor: TYPE_COLORS[t] }}>{t}</span>
                     ))}
                   </div>

@@ -66,11 +66,11 @@ export default function PokemonDetail() {
 
   const handleDelete = async () => {
     if (!pokemon) return;
-    const ok = await confirm(`Delete ${pokemon.title}?`);
+    const ok = await confirm(`Delete ${pokemon.name}?`);
     if (!ok) return;
     try {
-      await deletePokemon(pokemon.externalId);
-      showToast(`${pokemon.title} deleted`, 'success');
+      await deletePokemon(pokemon.pokemonId);
+      showToast(`${pokemon.name} deleted`, 'success');
       router.push('/');
     } catch (err) {
       setError(err.message);
@@ -87,15 +87,15 @@ export default function PokemonDetail() {
   const toggleFavorite = () => {
     if (!pokemon) return;
     setFavorites((prev) => {
-      const next = prev.includes(pokemon.externalId)
-        ? prev.filter((f) => f !== pokemon.externalId)
-        : [...prev, pokemon.externalId];
+      const next = prev.includes(pokemon.pokemonId)
+        ? prev.filter((f) => f !== pokemon.pokemonId)
+        : [...prev, pokemon.pokemonId];
       localStorage.setItem('pokemon-favs', JSON.stringify(next));
       return next;
     });
   };
 
-  const isFav = favorites.includes(pokemon?.externalId);
+  const isFav = favorites.includes(pokemon?.pokemonId);
   const raw = pokemon?.rawData;
 
   if (loading) {
@@ -127,7 +127,7 @@ export default function PokemonDetail() {
     raw?.sprites?.other?.['official-artwork']?.front_shiny ||
     raw?.sprites?.front_shiny;
   const sprite = shiny && shinySpriteUrl ? shinySpriteUrl : normalSprite;
-  const types = pokemon.description.split(', ');
+  const types = pokemon.types.split(', ');
   const mainType = types[0];
   const accent = TYPE_COLORS[mainType] || '#999';
   const cryUrl = raw?.cries?.latest;
@@ -141,19 +141,19 @@ export default function PokemonDetail() {
         <div className="prev-next-nav">
           {pokemon.prevPokemon ? (
             <Link
-              href={`/pokemon/${pokemon.prevPokemon.externalId}`}
+              href={`/pokemon/${pokemon.prevPokemon.pokemonId}`}
               className="prev-next-link prev-link"
             >
-              &larr; {pokemon.prevPokemon.title}
+              &larr; {pokemon.prevPokemon.name}
             </Link>
           ) : <span />}
-          <span className="prev-next-label">#{pokemon.externalId.padStart(4, '0')}</span>
+          <span className="prev-next-label">#{pokemon.pokemonId.padStart(4, '0')}</span>
           {pokemon.nextPokemon ? (
             <Link
-              href={`/pokemon/${pokemon.nextPokemon.externalId}`}
+              href={`/pokemon/${pokemon.nextPokemon.pokemonId}`}
               className="prev-next-link next-link"
             >
-              {pokemon.nextPokemon.title} &rarr;
+              {pokemon.nextPokemon.name} &rarr;
             </Link>
           ) : <span />}
         </div>
@@ -162,7 +162,7 @@ export default function PokemonDetail() {
       <div className="detail-card" style={{ borderColor: accent }}>
         <div className="detail-header">
           <div className="detail-id" style={{ color: accent }}>
-            #{pokemon.externalId.padStart(4, '0')}
+            #{pokemon.pokemonId.padStart(4, '0')}
           </div>
           <button
             className={`btn-fav btn-fav-lg ${isFav ? 'fav-active' : ''}`}
@@ -172,11 +172,11 @@ export default function PokemonDetail() {
             {isFav ? '★' : '☆'}
           </button>
           <div className="detail-image-wrap" style={{ background: `${accent}22` }}>
-            <PokemonSprite src={sprite} alt={pokemon.title} width={240} height={240} className={`detail-image ${shiny ? 'shiny' : ''}`} priority />
+            <PokemonSprite src={sprite} alt={pokemon.name} width={240} height={240} className={`detail-image ${shiny ? 'shiny' : ''}`} priority />
             <div className="scan-line" />
           </div>
           <div className="detail-title-section">
-            <h1 className="detail-name">{pokemon.title}</h1>
+            <h1 className="detail-name">{pokemon.name}</h1>
             <div className="card-types" style={{ justifyContent: 'center' }}>
               {types.map((type) => (
                 <span
@@ -287,8 +287,8 @@ export default function PokemonDetail() {
             </div>
           </div>
 
-          <SpeciesInfo externalId={pokemon.externalId} />
-          <EvolutionChain externalId={pokemon.externalId} />
+          <SpeciesInfo externalId={pokemon.pokemonId} />
+          <EvolutionChain externalId={pokemon.pokemonId} />
           <MoveList rawData={raw} />
         </div>
       </div>

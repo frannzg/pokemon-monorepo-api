@@ -92,7 +92,7 @@ export default function EvolutionChain({ externalId }) {
         results.forEach((r) => {
           if (r.status === 'fulfilled' && r.value) {
             const raw = r.value.rawData;
-            spriteMap[r.value.externalId] =
+            spriteMap[r.value.pokemonId] =
               raw?.sprites?.other?.['official-artwork']?.front_default ||
               raw?.sprites?.front_default;
           }
