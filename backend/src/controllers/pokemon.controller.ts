@@ -313,8 +313,12 @@ export const getRandomPokemon = async (req: Request, res: Response): Promise<voi
       res.status(404).json({ message: 'No pokemon available' });
       return;
     }
-    const random = await Pokemon.aggregate([{ $sample: { size: 1 } }]);
-    res.json(random[0]);
+    const random = await Pokemon.findOne().skip(Math.floor(Math.random() * count));
+    if (!random) {
+      res.status(404).json({ message: 'No pokemon available' });
+      return;
+    }
+    res.json(random);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

@@ -97,7 +97,7 @@ function PokemonSelector({ index, pokemon, pokemonData, search, results, loading
                     onClick={() => { onSelect(p); setOpen(false); }}
                   >
                     <img src={s} alt={p.name} width={36} height={36} className="compare-search-item-sprite" loading="lazy" />
-                    <span className="compare-search-item-id">#{p.pokemonId.padStart(4, '0')}</span>
+                    <span className="compare-search-item-id">#{(p.pokemonId || '').padStart(4, '0')}</span>
                     <span className="compare-search-item-name">{highlightText(p.name, search)}</span>
                   </button>
                 );

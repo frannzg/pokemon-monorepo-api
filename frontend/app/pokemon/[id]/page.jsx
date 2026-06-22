@@ -147,7 +147,7 @@ export default function PokemonDetail() {
               &larr; {pokemon.prevPokemon.name}
             </Link>
           ) : <span />}
-          <span className="prev-next-label">#{pokemon.pokemonId.padStart(4, '0')}</span>
+          <span className="prev-next-label">#{(pokemon.pokemonId || '').padStart(4, '0')}</span>
           {pokemon.nextPokemon ? (
             <Link
               href={`/pokemon/${pokemon.nextPokemon.pokemonId}`}
@@ -162,7 +162,7 @@ export default function PokemonDetail() {
       <div className="detail-card" style={{ borderColor: accent }}>
         <div className="detail-header">
           <div className="detail-id" style={{ color: accent }}>
-            #{pokemon.pokemonId.padStart(4, '0')}
+            #{(pokemon.pokemonId || '').padStart(4, '0')}
           </div>
           <button
             className={`btn-fav btn-fav-lg ${isFav ? 'fav-active' : ''}`}

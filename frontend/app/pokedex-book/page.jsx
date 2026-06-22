@@ -19,7 +19,7 @@ function PokedexRow({ pokemon, selected, onSelect }) {
       className={`ds-row ${isActive ? 'active' : ''}`}
       onClick={() => onSelect(pokemon)}
     >
-      <span className="ds-row-num">#{pokemon.pokemonId.padStart(4, '0')}</span>
+      <span className="ds-row-num">#{(pokemon.pokemonId || '').padStart(4, '0')}</span>
       <div className="ds-row-sprite">
         <PokemonSprite src={sprite} alt="" width={36} height={36} />
       </div>
@@ -112,7 +112,7 @@ export default function PokedexBookPage() {
                 </Link>
               </div>
               <div className="ds-top-info">
-                <div className="ds-top-number">#{selected.pokemonId.padStart(4, '0')}</div>
+                <div className="ds-top-number">#{(selected.pokemonId || '').padStart(4, '0')}</div>
                 <div className="ds-top-name">{selected.name}</div>
                 <div className="ds-top-types">
                   {selectedTypes.map(t => (

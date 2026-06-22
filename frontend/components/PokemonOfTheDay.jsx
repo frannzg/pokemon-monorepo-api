@@ -58,7 +58,7 @@ export default function PokemonOfTheDay() {
           </Link>
         </div>
         <div className="potd-info">
-          <div className="potd-id" style={{ color: accent }}>#{pokemon.pokemonId.padStart(4, '0')}</div>
+          <div className="potd-id" style={{ color: accent }}>#{pokemon.pokemonId ? pokemon.pokemonId.padStart(4, '0') : '???'}</div>
           <Link href={`/pokemon/${pokemon.pokemonId}`} className="potd-name">{pokemon.name}</Link>
           <div className="potd-types">
             {types.map((t) => (

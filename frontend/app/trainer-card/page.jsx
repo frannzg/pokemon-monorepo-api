@@ -194,7 +194,7 @@ export default function TrainerCardPage() {
 
       ctx.font = 'bold 16px monospace';
       ctx.fillStyle = textMuted;
-      ctx.fillText('#' + pokemon.pokemonId.padStart(4, '0'), 90, 132);
+      ctx.fillText('#' + (pokemon.pokemonId || '').padStart(4, '0'), 90, 132);
 
       const types = pokemon.types.split(', ');
       types.forEach((type, i) => {
@@ -353,7 +353,7 @@ export default function TrainerCardPage() {
                         }}
                       >
                         <PokemonSprite src={sprite} alt="" width={36} height={36} />
-                        <span className="tc-search-item-id">#{p.pokemonId.padStart(4, '0')}</span>
+                        <span className="tc-search-item-id">#{(p.pokemonId || '').padStart(4, '0')}</span>
                         <span className="tc-search-item-name">{highlightText(p.name, searchInput)}</span>
                       </button>
                     );
@@ -370,7 +370,7 @@ export default function TrainerCardPage() {
                   height={48}
                 />
                 <div>
-                  <strong>#{pokemon.pokemonId.padStart(4, '0')} {pokemon.name}</strong>
+                  <strong>#{(pokemon.pokemonId || '').padStart(4, '0')} {pokemon.name}</strong>
                   <div className="tc-selected-types">
                     {pokemon.types.split(', ').map(t => (
                       <span key={t} className="type-badge" style={{ backgroundColor: TYPE_COLORS[t] }}>{t}</span>

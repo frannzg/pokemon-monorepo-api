@@ -188,7 +188,7 @@ export default function TeamDetailPage() {
                 <Link href={`/pokemon/${pokemon.pokemonId}`} className="detail-slot-link">
                   <div className="card" style={{ borderColor: 'transparent', boxShadow: 'none' }}>
                     <div className="card-id">
-                      #{pokemon.pokemonId.padStart(4, '0')}
+                      #{(pokemon.pokemonId || '').padStart(4, '0')}
                     </div>
                     <div className="card-image">
                       <PokemonSprite src={sprite} alt={pokemon.name} width={110} height={110} className="card-img" />

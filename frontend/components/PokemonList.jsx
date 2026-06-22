@@ -58,7 +58,7 @@ const PokemonCard = memo(function PokemonCard({ pokemon, onAddToTeam, onEdit, on
     <div className="card-link-wrapper">
       <Link href={`/pokemon/${pokemon.pokemonId}`} className="card-link">
         <div className="card">
-          <div className="card-id">#{pokemon.pokemonId.padStart(4, '0')}</div>
+          <div className="card-id">#{(pokemon.pokemonId || '').padStart(4, '0')}</div>
           <button
             className={`btn-fav ${isFavorite ? 'fav-active' : ''}`}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(pokemon.pokemonId); }}
